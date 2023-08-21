@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "*"
+uvicorn = "*"
+starlette = "*"
+jinja2 = "*"
+boto3 = "*"
+passlib = "*"
+bcrypt = "*"
+pytest = "*"
+requests = "*"
+jsonify = "*"
+openai = "*"
+mangum = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

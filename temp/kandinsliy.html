@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Random Kandinsky-like Painting with Gradients</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="kandinskyCanvas" width="400" height="400"></canvas>
+
+    <script>
+        // Get the canvas element and its context
+        const canvas = document.getElementById('kandinskyCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Function to generate a random integer between min and max (inclusive)
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Function to generate a random RGB color
+        function getRandomColor() {
+            const r = getRandomInt(0, 255);
+            const g = getRandomInt(0, 255);
+            const b = getRandomInt(0, 255);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        // Function to generate a random gradient
+        function createRandomGradient(x, y, radius) {
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, getRandomColor());
+            gradient.addColorStop(1, getRandomColor());
+            return gradient;
+        }
+
+        // Function to draw a random shape on the canvas with gradient fill
+        function drawRandomShape() {
+            const shapeType = getRandomInt(1, 3); // 1 = rectangle, 2 = circle, 3 = triangle
+
+            const x = getRandomInt(50, canvas.width - 50);
+            const y = getRandomInt(50, canvas.height - 50);
+
+            const width = getRandomInt(30, 100);
+            const height = getRandomInt(30, 100);
+
+            ctx.beginPath();
+
+            switch (shapeType) {
+                case 1:
+                    ctx.rect(x, y, width, height);
+                    break;
+                case 2:
+                    ctx.arc(x, y, width / 2, 0, 2 * Math.PI);
+                    break;
+                case 3:
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + width, y);
+                    ctx.lineTo(x + width / 2, y - height);
+                    ctx.closePath();
+                    break;
+            }
+
+            const gradient = createRandomGradient(x, y, width / 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        // Function to draw a random line on the canvas with gradient stroke
+        function drawRandomLine() {
+            const x1 = getRandomInt(0, canvas.width);
+            const y1 = getRandomInt(0, canvas.height);
+            const x2 = getRandomInt(0, canvas.width);
+            const y2 = getRandomInt(0, canvas.height);
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            const gradient = createRandomGradient((x1 + x2) / 2, (y1 + y2) / 2, 50);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = getRandomInt(1, 5);
+            ctx.stroke();
+        }
+
+        // Function to generate the Kandinsky-like painting
+        function generatePainting() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const numShapes = getRandomInt(30, 50);
+            const numLines = getRandomInt(20, 30);
+
+            for (let i = 0; i < numShapes; i++) {
+                drawRandomShape();
+            }
+
+            for (let i = 0; i < numLines; i++) {
+                drawRandomLine();
+            }
+        }
+
+        // Generate the painting on page load
+        generatePainting();
+    </script>
+</body>
+</html>
+

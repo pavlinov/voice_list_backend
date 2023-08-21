@@ -1,0 +1,345 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+Description: >
+  SAM Template for databases
+
+Parameters:
+  VLEnvironment:
+    Type: String
+    Description: The environment to deploy to
+    Default: dev
+    AllowedValues:
+      - dev
+      - qa
+      - staging
+      - prod
+
+
+Resources:
+  # Create the VoiceListUsersTable for fields: id, username, email, password, created_at, updated_at
+  VoiceListUsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "voice-list-users-${VLEnvironment}"
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        - AttributeName: "username"
+          AttributeType: "S"
+        - AttributeName: "email"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: id
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      GlobalSecondaryIndexes:
+        - IndexName: "username-index"
+          KeySchema:
+            - AttributeName: username
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "5"
+            WriteCapacityUnits: "5"
+        - IndexName: "email-index"
+          KeySchema:
+            - AttributeName: email
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "5"
+            WriteCapacityUnits: "5"
+
+  VoiceListListsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "voice-list-lists-${VLEnvironment}"
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        - AttributeName: "name"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      GlobalSecondaryIndexes:
+        - IndexName: "name-index"
+          KeySchema:
+            - AttributeName: "name"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "5"
+            WriteCapacityUnits: "5"
+
+
+  VoiceListItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "voice-list-items-${VLEnvironment}"
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        - AttributeName: "title"
+          AttributeType: "S"
+        - AttributeName: "user_id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      GlobalSecondaryIndexes:
+        - IndexName: "title-index"
+          KeySchema:
+            - AttributeName: "title"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "5"
+            WriteCapacityUnits: "5"
+        - IndexName: "user_id-index"
+          KeySchema:
+            - AttributeName: "user_id"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "5"
+            WriteCapacityUnits: "5"
+
+# # create API-Gateway for http://127.0.0.1:8000/users/{user_id}?token={token}
+  VoiceListUsersApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref VLEnvironment
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          title: "Voice List Users API"
+          description: "Voice List Users API"
+          version: "1.0.0"
+        paths:
+          /users/{user_id}:
+            get:
+              parameters:
+                - name: "user_id"
+                  in: "path"
+                  required: true
+                  type: "string"
+                - name: "token"
+                  in: "query"
+                  required: true
+                  type: "string"
+              responses:
+                200:
+                  description: "Success"
+                  schema:
+                    $ref: "#/definitions/Success"
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:dynamodb:path//"
+                responses:
+                  default:
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "GET"
+                type: "aws_proxy"
+          /users:
+            post:
+              parameters:
+                - name: "username"
+                  in: "body"
+                  required: true
+                  type: "string"
+                - name: "email"
+                  in: "body"
+                  required: true
+                  type: "string"
+                - name: "password"
+                  in: "body"
+                  required: true
+                  type: "string"
+              responses:
+                200:
+                  description: "Success"
+                  schema:
+                    $ref: "#/definitions/Success"
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:dynamodb:path//"
+                responses:
+                  default:
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                type: "aws_proxy"
+        definitions:
+          Success:
+            type: "object"
+            properties:
+              success:
+                type: "boolean"
+                example: true
+                description: "return true if success"
+
+
+
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "ami-053b0d53c279acc90"
+      InstanceType: "t2.micro"
+      KeyName: "ec2fastapi"
+      AvailabilityZone: !Sub "${AWS::Region}b"
+      Tenancy: "default"
+      SubnetId: "subnet-3e918d4a"
+      EbsOptimized: false
+      SecurityGroupIds:
+        - "sg-0994efad809aa5abc"
+      SourceDestCheck: true
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            Encrypted: false
+            VolumeSize: 8
+            SnapshotId: "snap-0d3283808e9f92122"
+            VolumeType: "gp2"
+            DeleteOnTermination: true
+      Tags:
+        - Key: "Name"
+          Value: "VoiceListInstance"
+      UserData:
+        Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            # this id ubuntu instance. install docker
+            sudo apt-get update -y
+            sudo apt install -y ca-certificates curl gnupg lsb-release
+            sudo mkdir -p /etc/apt/keyrings
+            sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/docker-archive-keyring.gpg
+            echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            sudo apt-get update -y
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            sudo usermod -aG docker $USER
+            id $USER
+            newgrp docker
+            sudo docker run hello-world
+            sudo apt-get install -y docker-compose
+            sudo apt-get install -y python3-pip
+      HibernationOptions:
+        Configured: false
+      EnclaveOptions:
+        Enabled: false
+
+  # S3 Bucket to host single page app website
+  WebSiteBucket:
+    Type: AWS::S3::Bucket
+  WebSiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebSiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: PolicyForCloudFrontPrivateContent
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref WebSiteBucket, /* ] ]
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Join [ '', [ 'arn:aws:cloudfront::', !Ref "AWS::AccountId", ":distribution/", !Ref CloudFrontDistribution ] ]
+  # CloudFront Distribution for hosting the single page app website
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt WebSiteBucket.RegionalDomainName
+            Id: myS3Origin
+            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: myS3Origin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: allow-all
+          MinTTL: 0
+          DefaultTTL: 3600
+          MaxTTL: 86400
+        PriceClass: PriceClass_200
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: whitelist
+            Locations:
+              - US
+              - CA
+              - GB
+              - DE
+              - PT
+              - IT
+              - UA
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${WebSiteBucket} OAC"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+
+#  Outputs:
+#    CloudFrontDistributionId:
+#      Description: CloudFront Distribution ID for hosting web front end
+#      Value: !Ref CloudFrontDistribution
+#    CloudFrontURL:
+#      Description: URL for website hosted on CloudFront
+#      Value: !GetAtt CloudFrontDistribution.DomainName
+#    WebS3BucketName:
+#      Description: S3 Bucket for hosting web frontend
+#      Value: !Ref WebSiteBucket
+

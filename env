@@ -1,0 +1,13 @@
+APP=vlb
+STAGE=dev
+
+REGION=us-east-1
+AWS_REGION=us-east-1
+S3_BUCKET=cf-templates-1mcysmvkujq2c-us-east-1
+
+SERVICE=databases
+TEMPLATE="aws_templates/databases.yml"
+
+OPENAI_API_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=

@@ -1,0 +1,38 @@
+integration:
+  get-user:
+    request: "curl --location --request GET 'http://127.0.0.1:8000/users/6d687130-505c-47ff-b4c6-de0ca33de80d?token=mia' --header 'accept: application/json'"
+    response: |
+      {
+        "updated_at": "2023-06-28 06:48:00.635446",
+        "password": "Temp12345",
+        "username": "apavlinov",
+        "email": "apavlinov@example.com",
+        "id": "6d687130-505c-47ff-b4c6-de0ca33de80d"
+      }
+  create-user:
+    request: |
+      curl --location --request POST 'http://127.0.0.1:8000/users?token=mia' \
+        --header 'accept: application/json' \
+        --header 'x-token: fake-super-secret-token' \
+        --data-raw '{
+            "password": "temp1234",
+            "username": "apavlinov",
+            "email": "apavlinov@example.com"
+        }'"
+    response: |
+      {
+          "ResponseMetadata": {
+              "RequestId": "1P1OE9BAJTB7JJ1TCREDCIIM5NVV4KQNSO5AEMVJF66Q9ASUAAJG",
+              "HTTPStatusCode": 200,
+              "HTTPHeaders": {
+                  "server": "Server",
+                  "date": "Wed, 28 Jun 2023 04:48:46 GMT",
+                  "content-type": "application/x-amz-json-1.0",
+                  "content-length": "2",
+                  "connection": "keep-alive",
+                  "x-amzn-requestid": "1P1OE9BAJTB7JJ1TCREDCIIM5NVV4KQNSO5AEMVJF66Q9ASUAAJG",
+                  "x-amz-crc32": "2745614147"
+              },
+              "RetryAttempts": 0
+          }
+      }
